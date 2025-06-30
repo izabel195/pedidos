@@ -146,29 +146,43 @@
     <h1>Bem-vindo ao Sistema</h1>
 
     <form id="pedidoForm">
-      <h2>Cadastrar Pedido</h2>
-      <label>Produto:</label>
-      <input type="text" id="produto" required />
-      <label>Vendas:</label>
-      <input type="number" id="vendas" min="1" required />
-      <label>Cliente:</label>
-      <input type="text" id="cliente" required />
-      <label>Data de Entrada:</label>
-      <input type="date" id="dataEntrada" required />
-      <label>Prazo da Produção:</label>
-      <input type="date" id="prazo" required />
-      <label>Volumes:</label>
-      <input type="number" id="volumes" min="1" required />
-      <button type="submit">Cadastrar Pedido</button>
-      <div class="error-msg" id="pedidoError"></div>
-      <div class="success-msg" id="pedidoSuccess"></div>
-    </form>
+  <h2>Cadastrar Pedido</h2>
+
+  <label>Cliente:</label>
+  <input type="text" id="cliente" required />
+
+  <label>Data de Entrada:</label>
+  <input type="date" id="dataEntrada" required />
+
+  <label>Prazo da Produção:</label>
+  <input type="date" id="prazo" required />
+
+  <label>Volumes:</label>
+  <input type="number" id="volumes" min="1" required />
+
+  <label>Vendas:</label>
+  <input type="number" id="vendas" min="1" required />
+
+  <label>Produtos:</label>
+  <div id="produtosContainer">
+    <div class="produto-item">
+      <input type="text" placeholder="Produto" class="produto-nome" required />
+      <input type="number" placeholder="Qtd" class="produto-qtd" min="1" required />
+    </div>
+  </div>
+  <button type="button" onclick="adicionarProduto()">+ Adicionar Produto</button>
+
+  <button type="submit">Cadastrar Pedido</button>
+  <div class="error-msg" id="pedidoError"></div>
+  <div class="success-msg" id="pedidoSuccess"></div>
+</form>
+
 
    <h3>Pedidos Pendentes</h3>
 <table>
   <thead>
     <tr>
-      <th>Produto</th>
+      <th>Produtos (Qtd)</th>
       <th>Vendas</th>
       <th>Cliente</th>
       <th>Entrada</th>
@@ -220,6 +234,9 @@
   <button onclick="imprimirTabela('pendentes')" style="padding: 8px 12px; font-size: 14px;">🖨️ Imprimir Pendentes</button>
   <button onclick="imprimirTabela('entregues')" style="padding: 8px 12px; font-size: 14px;">🖨️ Imprimir Entregues</button>
 </div>
+<div id="produtosContainer"></div>
+<button type="button" onclick="adicionarCampoProduto()">+ Adicionar Produto</button>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
@@ -310,7 +327,7 @@ function carregarPedidosEntregues() {
         const p = doc.data();
         entreguesList.innerHTML += `
           <tr>
-            <td>${p.produto}</td>
+           <td>${p.produtos?.map(pr => `${pr.nome} (${pr.qtd})`).join('<br>') || '-'}</td>
             <td>${p.cliente}</td>
             <td>${p.dataEntrada}</td>
             <td>${p.volumes}</td>
@@ -371,7 +388,9 @@ function carregarPedidos(){
         const acoes = p.entregue ? 'Entregue' : `<button onclick=\"marcarEntregue('${doc.id}')\">Entregar</button>`;
         pedidosList.innerHTML += `
           <tr>
-            <td>${p.produto}</td>
+            <td>${p.produtos?.map(pr => `${pr.nome} (${pr.qtd})`).join('<br>') || '-'}</td>
+
+
             <td>${p.vendas}</td>
             <td>${p.cliente}</td>
             <td>${p.dataEntrada}</td>
@@ -472,43 +491,66 @@ function carregarPedidos(){
       mostrarSection('index');
     });
 
-    pedidoForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      pedidoError.textContent = '';
-      pedidoSuccess.textContent = '';
+function adicionarProduto() {
+  const container = document.getElementById("produtosContainer");
+  const div = document.createElement("div");
+  div.className = "produto-item";
+  div.innerHTML = `
+    <input type="text" placeholder="Produto" class="produto-nome" required />
+    <input type="number" placeholder="Qtd" class="produto-qtd" min="1" required />
+  `;
+  container.appendChild(div);
+}
 
-      const produto = document.getElementById('produto').value.trim();
-      const vendas = Number(document.getElementById('vendas').value);
-      const cliente = document.getElementById('cliente').value.trim();
-      const dataEntrada = document.getElementById('dataEntrada').value;
-      const prazo = document.getElementById('prazo').value;
-      const volumes = Number(document.getElementById('volumes').value);
-      const uid = auth.currentUser.uid;
+  pedidoForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  pedidoError.textContent = '';
+  pedidoSuccess.textContent = '';
 
-      if(!produto || vendas <= 0 || !cliente || !dataEntrada || !prazo || volumes <= 0){
-        pedidoError.textContent = 'Preencha todos os campos corretamente.';
-        return;
-      }
+  const cliente = document.getElementById('cliente').value.trim();
+  const dataEntrada = document.getElementById('dataEntrada').value;
+  const prazo = document.getElementById('prazo').value;
+  const volumes = Number(document.getElementById('volumes').value);
+  const vendas = Number(document.getElementById('vendas').value);
+  const uid = auth.currentUser.uid;
 
-      db.collection('pedidos').add({
-        produto,
-        vendas,
-        cliente,
-        dataEntrada,
-        prazo,
-        volumes,
-        uid,
-        criadoEm: new Date().toISOString()
-      })
-      .then(() => {
-        pedidoSuccess.textContent = 'Pedido cadastrado com sucesso!';
-        pedidoForm.reset();
-        carregarPedidos();
-      })
-      .catch(err => {
-        pedidoError.textContent = 'Erro ao cadastrar pedido: ' + err.message;
-      });
-    });
+  // Coleta todos os produtos
+  const produtos = [];
+  document.querySelectorAll('.produto-item').forEach(item => {
+    const nome = item.querySelector('.produto-nome').value.trim();
+    const qtd = Number(item.querySelector('.produto-qtd').value);
+    if (nome && qtd > 0) {
+      produtos.push({ nome, qtd });
+    }
+  });
+
+  if (!cliente || !dataEntrada || !prazo || volumes <= 0 || vendas <= 0 || produtos.length === 0) {
+    pedidoError.textContent = 'Preencha todos os campos corretamente.';
+    return;
+  }
+
+  db.collection('pedidos').add({
+    produtos,
+    vendas,
+    cliente,
+    dataEntrada,
+    prazo,
+    volumes,
+    uid,
+    criadoEm: new Date().toISOString()
+  })
+  .then(() => {
+    pedidoSuccess.textContent = 'Pedido cadastrado com sucesso!';
+    pedidoForm.reset();
+    document.getElementById('produtosContainer').innerHTML = ''; // limpa produtos
+    adicionarCampoProduto(); // adiciona o primeiro campo de novo
+    carregarPedidos();
+  })
+  .catch(err => {
+    pedidoError.textContent = 'Erro ao cadastrar pedido: ' + err.message;
+  });
+});
+
 
     function mostrarSection(nome) {
       loginSection.classList.remove('active');
@@ -544,7 +586,6 @@ function carregarPedidos(){
       const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
       return dias > 0 ? dias : 0;
     }
-
     function carregarPedidos(){
   const user = auth.currentUser;
   if(!user) return;
@@ -574,7 +615,8 @@ function carregarPedidos(){
         if (p.entregue) {
           entreguesList.innerHTML += `
             <tr>
-              <td>${p.produto}</td>
+             <td>${p.produtos?.map(prod => `${prod.nome} (${prod.qtd})`).join('<br>') || '-'}</td>
+
               <td>${p.vendas}</td>
               <td>${p.cliente}</td>
               <td>${p.dataEntrada}</td>
@@ -656,19 +698,46 @@ function carregarPedidos(){
     }
     function imprimirTabela(tipo) {
   let titulo = '';
-  let conteudo = '';
+  let linhas = '';
+  let rows = [];
 
-  if (tipo === 'pendentes') {
-    titulo = 'Pedidos Pendentes';
-    conteudo = document.querySelector('h3:nth-of-type(1)').outerHTML +
-               document.getElementById('pedidosPendentesList').parentElement.outerHTML;
-  } else if (tipo === 'entregues') {
-    titulo = 'Pedidos Entregues';
-    conteudo = document.querySelector('h3:nth-of-type(2)').outerHTML +
-               document.getElementById('pedidosEntreguesList').parentElement.outerHTML;
-  }
+  const tabela =
+    tipo === 'pendentes'
+      ? document.getElementById('pedidosPendentesList')
+      : document.getElementById('pedidosEntreguesList');
 
-  const janela = window.open('', '', 'width=800,height=600');
+  titulo = tipo === 'pendentes' ? 'Pedidos Pendentes' : 'Pedidos Entregues';
+
+  const trs = tabela.querySelectorAll('tr');
+
+  trs.forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    if (tds.length >= 7) {
+      const produtos = tds[0].innerHTML.replaceAll('<br>', '\n');
+      const vendas = tds[1].innerText;
+      const cliente = tds[2].innerText;
+      const entrada = tds[3].innerText;
+      const prazo = tds[4].innerText;
+      const volumes = tds[5].innerText;
+      const status = tipo === 'pendentes' ? tds[7].innerText : tds[6].innerText;
+
+      rows.push({ produtos, vendas, cliente, entrada, prazo, volumes, status });
+    }
+  });
+
+  const linhasTabela = rows.map(r => `
+    <tr>
+      <td>${r.produtos.replaceAll('\n', '<br>')}</td>
+      <td>${r.vendas}</td>
+      <td>${r.cliente}</td>
+      <td>${r.entrada}</td>
+      <td>${r.prazo}</td>
+      <td>${r.volumes}</td>
+      <td>${r.status}</td>
+    </tr>
+  `).join('');
+
+  const janela = window.open('', '', 'width=900,height=600');
   janela.document.write(`
     <html>
       <head>
@@ -676,14 +745,30 @@ function carregarPedidos(){
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #000; padding: 6px; font-size: 13px; text-align: center; }
+          th, td { border: 1px solid #000; padding: 6px; font-size: 13px; text-align: center; vertical-align: top; }
           th { background-color: #f0f0f0; }
           h2, h3 { text-align: center; margin-bottom: 10px; }
         </style>
       </head>
       <body>
         <h2>Kurma Descartáveis</h2>
-        ${conteudo}
+        <h3>${titulo}</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Produtos (Qtd)</th>
+              <th>Vendas</th>
+              <th>Cliente</th>
+              <th>Entrada</th>
+              <th>Prazo</th>
+              <th>Volumes</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${linhasTabela}
+          </tbody>
+        </table>
       </body>
     </html>
   `);
@@ -697,3 +782,4 @@ function carregarPedidos(){
 
 </body>
 </html>
+
