@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sistema Completo - Login, Registro, Index e Gráficos</title>
+<script src="https://cdn.pixabay.com/photo/2024/06/27/13/45/wallpaper-8857295_640.jpg"></script>
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: url('https://cdn.pixabay.com/photo/2023/11/25/12/18/sea-8411640_1280.jpg') no-repeat center center fixed;
+    background-size: cover;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .foto-pessoal {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 20px;
+    border: 3px solid white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.7);
+  }
+ section {
+  display: none;
+  width: 100%;
+  max-width: 900px; /* aumentei de 500px para 900px */
+  background: rgba(0,0,0,0.6);
+  padding: 30px;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+  section.active {
+    display: block;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  input[type="email"], input[type="password"], input[type="text"], input[type="date"], input[type="number"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border: none;
+  }
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+  button {
+    margin-top: 20px;
+    padding: 10px;
+    width: 100%;
+    border: none;
+    border-radius: 4px;
+    background: #007bff;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #0056b3;
+  }
+  .error-msg {
+    color: #ff6666;
+    margin-top: 10px;
+  }
+  .success-msg {
+    color: #0f0;
+    margin-top: 10px;
+  }
+  h1 {
+    text-align: center;
+  }
+  #graficoStatus {
+    max-width: 100%;
+  }
+  .btn-small {
+    padding: 8px 12px;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    color: white;
+  }
+  th, td {
+    border: 1px solid white;
+    padding: 6px;
+    text-align: center;
+  }
+  th {
+    background-color: rgba(0,0,0,0.8);
+  }
+  .status-atrasado {
+    color: #dc3545;
+    font-weight: bold;
+  }
+  .status-emdia {
+    color: #28a745;
+    font-weight: bold;
+  }
+  .link {
+    color: #ccc;
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 14px;
+    margin-top: 10px;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+
+  <img class="foto-pessoal" src="https://cdn.pixabay.com/photo/2024/06/27/13/45/wallpaper-8857295_640.jpg" alt="Minha Foto" />
+
+  <!-- LOGIN E REGISTRO -->
+  <section id="loginSection" class="active">
+    <h1 id="formTitle">Login</h1>
+    <form id="loginForm">
+      <label for="email">E-mail:</label>
+      <input type="email" id="email" required />
+      <label for="senha">Senha:</label>
+      <input type="password" id="senha" required />
+      <label><input type="checkbox" id="mostrarSenha" /> Mostrar senha</label>
+      <button type="submit" id="submitBtn">Entrar</button>
+      <div class="error-msg" id="errorMsg"></div>
+      <div class="success-msg" id="successMsg"></div>
+    </form>
+    <span id="linkEsqueciSenha" class="link">Esqueci minha senha</span><br/>
+    <span id="linkToggleRegister" class="link">Criar uma conta</span>
+  </section>
+
+  <!-- INDEX -->
+  <section id="indexSection">
+    <h1>Bem-vindo ao Sistema</h1>
+
+    <form id="pedidoForm">
+      <h2>Cadastrar Pedido</h2>
+      <label>Produto:</label>
+      <input type="text" id="produto" required />
+      <label>Vendas:</label>
+      <input type="number" id="vendas" min="1" required />
+      <label>Cliente:</label>
+      <input type="text" id="cliente" required />
+      <label>Data de Entrada:</label>
+      <input type="date" id="dataEntrada" required />
+      <label>Prazo da Produção:</label>
+      <input type="date" id="prazo" required />
+      <label>Volumes:</label>
+      <input type="number" id="volumes" min="1" required />
+      <button type="submit">Cadastrar Pedido</button>
+      <div class="error-msg" id="pedidoError"></div>
+      <div class="success-msg" id="pedidoSuccess"></div>
+    </form>
+
+   <h3>Pedidos Pendentes</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Produto</th>
+      <th>Vendas</th>
+      <th>Cliente</th>
+      <th>Entrada</th>
+      <th>Prazo</th>
+      <th>Dias Atraso</th>
+      <th>Volumes</th>
+      <th>Status</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody id="pedidosPendentesList"></tbody>
+</table>
+
+<h3>Pedidos Entregues</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Produto</th>
+      <th>Vendas</th>
+      <th>Cliente</th>
+      <th>Entrada</th>
+      <th>Prazo</th>
+      <th>Volumes</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="pedidosEntreguesList"></tbody>
+</table>
+
+
+      <tbody id="pedidosList">
+        <!-- Pedidos vão aqui -->
+        
+      </tbody>
+    </table>
+ <td><button onclick="marcarEntregue('${doc.id}')">Entregar</button></td>
+
+    <button id="btnGrafico">Ver Gráficos</button>
+    <button id="btnSair" class="btn-small">Sair</button>
+  </section>
+
+  <!-- GRÁFICOS -->
+  <section id="graficoSection">
+    <h1>Status dos Pedidos</h1>
+    <canvas id="graficoStatus"></canvas>
+    <button id="btnVoltar" class="btn-small">Voltar</button>
+  </section>
+  <div style="margin-top: 20px; display: flex; gap: 10px;">
+  <button onclick="imprimirTabela('pendentes')" style="padding: 8px 12px; font-size: 14px;">🖨️ Imprimir Pendentes</button>
+  <button onclick="imprimirTabela('entregues')" style="padding: 8px 12px; font-size: 14px;">🖨️ Imprimir Entregues</button>
+</div>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBAJOoeNzLQ6iOqmcUH8rTcFUHn2mFyKXk",
+  authDomain: "controledepe.firebaseapp.com",
+  projectId: "controledepe",
+  storageBucket: "controledepe.firebasestorage.app",
+  messagingSenderId: "976776356467",
+  appId: "1:976776356467:web:46dd62eec3434bf732c006",
+  measurementId: "G-1CVNZRZG91"
+};
+    firebase.initializeApp(firebaseConfig);
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Seções
+    const loginSection = document.getElementById('loginSection');
+    const indexSection = document.getElementById('indexSection');
+    const graficoSection = document.getElementById('graficoSection');
+
+    // Botões e elementos login/registro
+    const btnSair = document.getElementById('btnSair');
+    const btnGrafico = document.getElementById('btnGrafico');
+    const btnVoltar = document.getElementById('btnVoltar');
+
+    const loginForm = document.getElementById('loginForm');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const mostrarSenha = document.getElementById('mostrarSenha');
+    const senhaInput = document.getElementById('senha');
+    const linkEsqueciSenha = document.getElementById('linkEsqueciSenha');
+    const linkToggleRegister = document.getElementById('linkToggleRegister');
+    const formTitle = document.getElementById('formTitle');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Pedido
+    const pedidoForm = document.getElementById('pedidoForm');
+    const pedidoError = document.getElementById('pedidoError');
+    const pedidoSuccess = document.getElementById('pedidoSuccess');
+    const pedidosList = document.getElementById('pedidosList');
+
+    let isLoginMode = true; // true = login, false = registro
+
+    mostrarSenha.addEventListener('change', () => {
+      senhaInput.type = mostrarSenha.checked ? 'text' : 'password';
+    });
+  
+function marcarEntregue(id) {
+  if (confirm("Deseja marcar este pedido como entregue?")) {
+    db.collection("pedidos").doc(id).update({
+      entregue: true
+    }).then(() => {
+      alert("Pedido marcado como entregue!");
+      carregarPedidos();
+      carregarPedidosEntregues();
+    }).catch(err => {
+      alert("Erro ao marcar como entregue: " + err.message);
+    });
+  }
+}
+
+function carregarPedidosEntregues() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const entreguesList = document.getElementById("entreguesList");
+  entreguesList.innerHTML = '';
+  document.getElementById("entreguesSection").style.display = 'block';
+
+  db.collection("pedidos")
+    .where("uid", "==", user.uid)
+    .where("entregue", "==", true)
+    .orderBy("criadoEm", "desc")
+    .get()
+    .then(snapshot => {
+      if (snapshot.empty) {
+        entreguesList.innerHTML = "<tr><td colspan='4'>Nenhum pedido entregue encontrado.</td></tr>";
+        return;
+      }
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        entreguesList.innerHTML += `
+          <tr>
+            <td>${p.produto}</td>
+            <td>${p.cliente}</td>
+            <td>${p.dataEntrada}</td>
+            <td>${p.volumes}</td>
+          </tr>
+        `;
+      });
+    })
+    .catch(err => {
+      entreguesList.innerHTML = "<tr><td colspan='4'>Erro ao carregar entregues.</td></tr>";
+      console.error(err);
+    });
+}
+
+function baixarCSV() {
+  const rows = [['Produto', 'Cliente', 'Data', 'Volumes']];
+  const trs = document.querySelectorAll('#entreguesList tr');
+  trs.forEach(tr => {
+    const cols = tr.querySelectorAll('td');
+    const row = [];
+    cols.forEach(td => row.push(td.textContent));
+    rows.push(row);
+  });
+
+  const csvContent = rows.map(e => e.join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  link.setAttribute("download", "pedidos_entregues.csv");
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Modifique a renderização de pedidos para incluir botão "Entregar"
+function carregarPedidos(){
+  const user = auth.currentUser;
+  if(!user) return;
+
+  pedidosList.innerHTML = '';
+
+  db.collection('pedidos')
+    .where('uid', '==', user.uid)
+    .orderBy('criadoEm', 'desc')
+    .get()
+    .then(snapshot => {
+      if(snapshot.empty){
+        pedidosList.innerHTML = '<tr><td colspan="9">Nenhum pedido encontrado.</td></tr>';
+        return;
+      }
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        const atraso = calcularAtraso(p.prazo);
+        const status = atraso > 0 ? 
+          `<span class="status-atrasado">Atrasado</span>` : 
+          `<span class="status-emdia">Em Dia</span>`;
+        const acoes = p.entregue ? 'Entregue' : `<button onclick=\"marcarEntregue('${doc.id}')\">Entregar</button>`;
+        pedidosList.innerHTML += `
+          <tr>
+            <td>${p.produto}</td>
+            <td>${p.vendas}</td>
+            <td>${p.cliente}</td>
+            <td>${p.dataEntrada}</td>
+            <td>${p.prazo}</td>
+            <td>${atraso}</td>
+            <td>${p.volumes}</td>
+            <td>${status}</td>
+            <td>${acoes}</td>
+          </tr>
+        `;
+      });
+    })
+    .catch(err => {
+      pedidosList.innerHTML = '<tr><td colspan="9">Erro ao carregar pedidos.</td></tr>';
+      console.error(err);
+    });
+}
+
+
+    linkToggleRegister.addEventListener('click', () => {
+      isLoginMode = !isLoginMode;
+      if(isLoginMode){
+        formTitle.textContent = 'Login';
+        submitBtn.textContent = 'Entrar';
+        linkToggleRegister.textContent = 'Criar uma conta';
+        errorMsg.textContent = '';
+        successMsg.textContent = '';
+      } else {
+        formTitle.textContent = 'Registrar';
+        submitBtn.textContent = 'Registrar';
+        linkToggleRegister.textContent = 'Já tenho uma conta';
+        errorMsg.textContent = '';
+        successMsg.textContent = '';
+      }
+    });
+
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      errorMsg.textContent = '';
+      successMsg.textContent = '';
+
+      const email = document.getElementById('email').value;
+      const senha = senhaInput.value;
+
+      if(isLoginMode){
+        // Login
+        auth.signInWithEmailAndPassword(email, senha)
+          .then(() => {
+            mostrarSection('index');
+            carregarPedidos();
+          })
+          .catch(err => {
+            errorMsg.textContent = err.message;
+          });
+      } else {
+        // Registro
+        auth.createUserWithEmailAndPassword(email, senha)
+          .then(() => {
+            successMsg.textContent = 'Conta criada com sucesso! Você está logado.';
+            mostrarSection('index');
+            carregarPedidos();
+          })
+          .catch(err => {
+            errorMsg.textContent = err.message;
+          });
+      }
+    });
+
+    linkEsqueciSenha.addEventListener('click', () => {
+      const email = prompt('Digite seu e-mail para recuperar a senha:');
+      if(email){
+        auth.sendPasswordResetEmail(email)
+          .then(() => alert('E-mail de recuperação enviado! Verifique sua caixa de entrada.'))
+          .catch(err => alert('Erro: ' + err.message));
+      }
+    });
+
+    btnSair.addEventListener('click', () => {
+      auth.signOut().then(() => {
+        mostrarSection('login');
+        // Resetar formulário e modo login
+        isLoginMode = true;
+        formTitle.textContent = 'Login';
+        submitBtn.textContent = 'Entrar';
+        linkToggleRegister.textContent = 'Criar uma conta';
+        errorMsg.textContent = '';
+        successMsg.textContent = '';
+        loginForm.reset();
+      });
+    });
+
+    btnGrafico.addEventListener('click', () => {
+      mostrarSection('grafico');
+      carregarGrafico();
+    });
+
+    btnVoltar.addEventListener('click', () => {
+      mostrarSection('index');
+    });
+
+    pedidoForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      pedidoError.textContent = '';
+      pedidoSuccess.textContent = '';
+
+      const produto = document.getElementById('produto').value.trim();
+      const vendas = Number(document.getElementById('vendas').value);
+      const cliente = document.getElementById('cliente').value.trim();
+      const dataEntrada = document.getElementById('dataEntrada').value;
+      const prazo = document.getElementById('prazo').value;
+      const volumes = Number(document.getElementById('volumes').value);
+      const uid = auth.currentUser.uid;
+
+      if(!produto || vendas <= 0 || !cliente || !dataEntrada || !prazo || volumes <= 0){
+        pedidoError.textContent = 'Preencha todos os campos corretamente.';
+        return;
+      }
+
+      db.collection('pedidos').add({
+        produto,
+        vendas,
+        cliente,
+        dataEntrada,
+        prazo,
+        volumes,
+        uid,
+        criadoEm: new Date().toISOString()
+      })
+      .then(() => {
+        pedidoSuccess.textContent = 'Pedido cadastrado com sucesso!';
+        pedidoForm.reset();
+        carregarPedidos();
+      })
+      .catch(err => {
+        pedidoError.textContent = 'Erro ao cadastrar pedido: ' + err.message;
+      });
+    });
+
+    function mostrarSection(nome) {
+      loginSection.classList.remove('active');
+      indexSection.classList.remove('active');
+      graficoSection.classList.remove('active');
+
+      if(nome === 'login') loginSection.classList.add('active');
+      if(nome === 'index') indexSection.classList.add('active');
+      if(nome === 'grafico') graficoSection.classList.add('active');
+    }
+
+    auth.onAuthStateChanged(user => {
+      if(user){
+        mostrarSection('index');
+        carregarPedidos();
+      } else {
+        mostrarSection('login');
+        // Resetar formulário e modo login
+        isLoginMode = true;
+        formTitle.textContent = 'Login';
+        submitBtn.textContent = 'Entrar';
+        linkToggleRegister.textContent = 'Criar uma conta';
+        errorMsg.textContent = '';
+        successMsg.textContent = '';
+        loginForm.reset();
+      }
+    });
+
+    function calcularAtraso(prazo) {
+      const hoje = new Date();
+      const prazoDate = new Date(prazo);
+      const diff = hoje - prazoDate;
+      const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+      return dias > 0 ? dias : 0;
+    }
+
+    function carregarPedidos(){
+  const user = auth.currentUser;
+  if(!user) return;
+
+  const pendentesList = document.getElementById('pedidosPendentesList');
+  const entreguesList = document.getElementById('pedidosEntreguesList');
+  pendentesList.innerHTML = '';
+  entreguesList.innerHTML = '';
+
+  db.collection('pedidos')
+    .where('uid', '==', user.uid)
+    .orderBy('criadoEm', 'desc')
+    .get()
+    .then(snapshot => {
+      if(snapshot.empty){
+        pendentesList.innerHTML = '<tr><td colspan="9">Nenhum pedido encontrado.</td></tr>';
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const p = doc.data();
+        const atraso = calcularAtraso(p.prazo);
+        const status = atraso > 0 
+          ? `<span class="status-atrasado">Atrasado</span>` 
+          : `<span class="status-emdia">Em Dia</span>`;
+
+        if (p.entregue) {
+          entreguesList.innerHTML += `
+            <tr>
+              <td>${p.produto}</td>
+              <td>${p.vendas}</td>
+              <td>${p.cliente}</td>
+              <td>${p.dataEntrada}</td>
+              <td>${p.prazo}</td>
+              <td>${p.volumes}</td>
+              <td><span class="status-emdia">Entregue</span></td>
+            </tr>
+          `;
+        } else {
+          pendentesList.innerHTML += `
+            <tr>
+              <td>${p.produto}</td>
+              <td>${p.vendas}</td>
+              <td>${p.cliente}</td>
+              <td>${p.dataEntrada}</td>
+              <td>${p.prazo}</td>
+              <td>${atraso}</td>
+              <td>${p.volumes}</td>
+              <td>${status}</td>
+              <td><button onclick="marcarEntregue('${doc.id}')">Entregar</button></td>
+            </tr>
+          `;
+        }
+      });
+    })
+    .catch(err => {
+      pendentesList.innerHTML = '<tr><td colspan="9">Erro ao carregar pedidos.</td></tr>';
+      console.error(err);
+    });
+}
+
+
+    let chartInstance = null;
+    function carregarGrafico() {
+      const user = auth.currentUser;
+      if(!user){
+        alert('Você precisa estar logado.');
+        mostrarSection('login');
+        return;
+      }
+      db.collection('pedidos').where('uid', '==', user.uid).get()
+        .then(snapshot => {
+          let atrasados = 0;
+          let emDia = 0;
+          snapshot.forEach(doc => {
+            const pedido = doc.data();
+            if(calcularAtraso(pedido.prazo) > 0){
+              atrasados++;
+            } else {
+              emDia++;
+            }
+          });
+
+          const ctx = document.getElementById('graficoStatus').getContext('2d');
+          if(chartInstance) chartInstance.destroy();
+
+          chartInstance = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: ['Atrasado', 'Em Dia'],
+              datasets: [{
+                data: [atrasados, emDia],
+                backgroundColor: ['#dc3545', '#28a745']
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'bottom' },
+                title: { display: true, text: 'Pedidos Atrasados vs Em Dia' }
+              }
+            }
+          });
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Erro ao carregar dados do gráfico.');
+        });
+    }
+    function imprimirTabela(tipo) {
+  let titulo = '';
+  let conteudo = '';
+
+  if (tipo === 'pendentes') {
+    titulo = 'Pedidos Pendentes';
+    conteudo = document.querySelector('h3:nth-of-type(1)').outerHTML +
+               document.getElementById('pedidosPendentesList').parentElement.outerHTML;
+  } else if (tipo === 'entregues') {
+    titulo = 'Pedidos Entregues';
+    conteudo = document.querySelector('h3:nth-of-type(2)').outerHTML +
+               document.getElementById('pedidosEntreguesList').parentElement.outerHTML;
+  }
+
+  const janela = window.open('', '', 'width=800,height=600');
+  janela.document.write(`
+    <html>
+      <head>
+        <title>${titulo}</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #000; padding: 6px; font-size: 13px; text-align: center; }
+          th { background-color: #f0f0f0; }
+          h2, h3 { text-align: center; margin-bottom: 10px; }
+        </style>
+      </head>
+      <body>
+        <h2>Kurma Descartáveis</h2>
+        ${conteudo}
+      </body>
+    </html>
+  `);
+  janela.document.close();
+  janela.focus();
+  janela.print();
+  janela.close();
+}
+
+  </script>
+
+</body>
+</html>
