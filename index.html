@@ -170,8 +170,7 @@
       <input type="number" placeholder="Qtd" class="produto-qtd" min="1" required />
     </div>
   </div>
- <button type="button" onclick="adicionarProduto()">+ Adicionar Produto</button>
-
+  <button type="button" onclick="adicionarProduto()">+ Adicionar Produto</button>
 
   <button type="submit">Cadastrar Pedido</button>
   <div class="error-msg" id="pedidoError"></div>
@@ -587,6 +586,10 @@ function adicionarProduto() {
       const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
       return dias > 0 ? dias : 0;
     }
+    function formatarProdutos(produtos) {
+  return produtos?.map(p => `${p.nome} (${p.qtd})`).join('<br>') || '-';
+}
+
     function carregarPedidos(){
   const user = auth.currentUser;
   if(!user) return;
@@ -614,32 +617,35 @@ function adicionarProduto() {
           : `<span class="status-emdia">Em Dia</span>`;
 
         if (p.entregue) {
-          entreguesList.innerHTML += `
-            <tr>
-             <td>${p.produtos?.map(prod => `${prod.nome} (${prod.qtd})`).join('<br>') || '-'}</td>
+    entreguesList.innerHTML += `
+  <tr>
+    <td>${formatarProdutos(p.produtos)}</td>
+    <td>${p.vendas}</td>
+    <td>${p.cliente}</td>
+    <td>${p.dataEntrada}</td>
+    <td>${p.prazo}</td>
+    <td>${p.volumes}</td>
+    <td><span class="status-emdia">Entregue</span></td>
+  </tr>
+`;
 
-              <td>${p.vendas}</td>
-              <td>${p.cliente}</td>
-              <td>${p.dataEntrada}</td>
-              <td>${p.prazo}</td>
-              <td>${p.volumes}</td>
-              <td><span class="status-emdia">Entregue</span></td>
-            </tr>
-          `;
+
         } else {
           pendentesList.innerHTML += `
-            <tr>
-              <td>${p.produto}</td>
-              <td>${p.vendas}</td>
-              <td>${p.cliente}</td>
-              <td>${p.dataEntrada}</td>
-              <td>${p.prazo}</td>
-              <td>${atraso}</td>
-              <td>${p.volumes}</td>
-              <td>${status}</td>
-              <td><button onclick="marcarEntregue('${doc.id}')">Entregar</button></td>
-            </tr>
-          `;
+  <tr>
+    <td>${formatarProdutos(p.produtos)}</td>
+    <td>${p.vendas}</td>
+    <td>${p.cliente}</td>
+    <td>${p.dataEntrada}</td>
+    <td>${p.prazo}</td>
+    <td>${atraso}</td>
+    <td>${p.volumes}</td>
+    <td>${status}</td>
+    <td><button onclick="marcarEntregue('${doc.id}')">Entregar</button></td>
+  </tr>
+`;
+
+
         }
       });
     })
@@ -783,4 +789,3 @@ function adicionarProduto() {
 
 </body>
 </html>
-
