@@ -18,6 +18,7 @@
     min-height: 100vh;
     padding: 20px;
   }
+  
   .foto-pessoal {
     width: 150px;
     height: 150px;
@@ -90,7 +91,7 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    margin-top: 18px;
     color: white;
   }
   th, td {
@@ -117,7 +118,21 @@
     margin-top: 10px;
     display: inline-block;
   }
+
+  /* Aumenta a fonte das datas */
+  td.data, th.data {
+    font-size: 16px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  h2, h3 { text-align: center; margin-bottom: 10px; }
 </style>
+
+
+
+
+
 </head>
 <body>
 
@@ -314,32 +329,34 @@ function carregarPedidosEntregues() {
   entreguesList.innerHTML = '';
   document.getElementById("entreguesSection").style.display = 'block';
 
-  db.collection("pedidos")
-    .where("uid", "==", user.uid)
-    .where("entregue", "==", true)
-    .orderBy("criadoEm", "desc")
-    .get()
-    .then(snapshot => {
-      if (snapshot.empty) {
-        entreguesList.innerHTML = "<tr><td colspan='4'>Nenhum pedido entregue encontrado.</td></tr>";
-        return;
-      }
-      snapshot.forEach(doc => {
-        const p = doc.data();
-        entreguesList.innerHTML += `
-          <tr>
-           <td>${p.produtos?.map(pr => `${pr.nome} (${pr.qtd})`).join('<br>') || '-'}</td>
-            <td>${p.cliente}</td>
-            <td>${p.dataEntrada}</td>
-            <td>${p.volumes}</td>
-          </tr>
-        `;
-      });
-    })
-    .catch(err => {
-      entreguesList.innerHTML = "<tr><td colspan='4'>Erro ao carregar entregues.</td></tr>";
-      console.error(err);
-    });
+  const id = pedidoForm.dataset.editandoId;
+
+const pedidoData = {
+  produtos,
+  vendas,
+  cliente,
+  dataEntrada,
+  prazo,
+  volumes,
+  uid,
+  criadoEm: new Date().toISOString()
+};
+
+const salvar = id 
+  ? db.collection('pedidos').doc(id).update(pedidoData) 
+  : db.collection('pedidos').add(pedidoData);
+
+salvar.then(() => {
+  pedidoSuccess.textContent = id ? 'Pedido atualizado com sucesso!' : 'Pedido cadastrado com sucesso!';
+  pedidoForm.reset();
+  pedidoForm.dataset.editandoId = '';
+  document.getElementById('produtosContainer').innerHTML = '';
+  adicionarCampoProduto();
+  carregarPedidos();
+}).catch(err => {
+  pedidoError.textContent = 'Erro ao salvar pedido: ' + err.message;
+});
+
 }
 
 function baixarCSV() {
@@ -387,7 +404,14 @@ function carregarPedidos(){
           `<span class="status-atrasado">Atrasado</span>` : 
           `<span class="status-emdia">Em Dia</span>`;
         const acoes = p.entregue ? 'Entregue' : `<button onclick=\"marcarEntregue('${doc.id}')\">Entregar</button>`;
+        
         pedidosList.innerHTML += `
+ 
+
+    <button onclick="marcarEntregue('${doc.id}')">Entregar</button>
+    <button onclick="editarPedido('${doc.id}')">Editar</button>
+
+
           <tr>
             <td>${p.produtos?.map(pr => `${pr.nome} (${pr.qtd})`).join('<br>') || '-'}</td>
 
@@ -530,7 +554,9 @@ function adicionarProduto() {
     return;
   }
 
-  db.collection('pedidos').add({
+  const id = pedidoForm.dataset.editandoId;
+
+  const pedidoData = {
     produtos,
     vendas,
     cliente,
@@ -539,18 +565,56 @@ function adicionarProduto() {
     volumes,
     uid,
     criadoEm: new Date().toISOString()
-  })
-  .then(() => {
-    pedidoSuccess.textContent = 'Pedido cadastrado com sucesso!';
+  };
+
+  const salvar = id 
+    ? db.collection('pedidos').doc(id).update(pedidoData) 
+    : db.collection('pedidos').add(pedidoData);
+
+  salvar.then(() => {
+    pedidoSuccess.textContent = id ? 'Pedido atualizado com sucesso!' : 'Pedido cadastrado com sucesso!';
     pedidoForm.reset();
-    document.getElementById('produtosContainer').innerHTML = ''; // limpa produtos
-    adicionarCampoProduto(); // adiciona o primeiro campo de novo
+    pedidoForm.dataset.editandoId = '';
+    document.getElementById('produtosContainer').innerHTML = '';
+    adicionarProduto();
     carregarPedidos();
-  })
-  .catch(err => {
-    pedidoError.textContent = 'Erro ao cadastrar pedido: ' + err.message;
+  }).catch(err => {
+    pedidoError.textContent = 'Erro ao salvar pedido: ' + err.message;
   });
 });
+function editarPedido(id) {
+  db.collection('pedidos').doc(id).get().then(doc => {
+    if (!doc.exists) {
+      alert("Pedido não encontrado.");
+      return;
+    }
+
+    const pedido = doc.data();
+    document.getElementById('cliente').value = pedido.cliente;
+    document.getElementById('dataEntrada').value = pedido.dataEntrada;
+    document.getElementById('prazo').value = pedido.prazo;
+    document.getElementById('volumes').value = pedido.volumes;
+    document.getElementById('vendas').value = pedido.vendas;
+
+    // Preenche produtos
+    const container = document.getElementById('produtosContainer');
+    container.innerHTML = '';
+    pedido.produtos.forEach(prod => {
+      const div = document.createElement('div');
+      div.className = 'produto-item';
+      div.innerHTML = `
+        <input type="text" class="produto-nome" value="${prod.nome}" required />
+        <input type="number" class="produto-qtd" value="${prod.qtd}" min="1" required />
+      `;
+      container.appendChild(div);
+    });
+
+    // Armazena o ID para salvar depois
+    pedidoForm.dataset.editandoId = id;
+    pedidoSuccess.textContent = 'Edite os dados e clique em "Cadastrar Pedido" para salvar.';
+  });
+}
+
 
 
     function mostrarSection(nome) {
@@ -591,7 +655,7 @@ function adicionarProduto() {
   return produtos?.map(p => `${p.nome} (${p.qtd})`).join('<br>') || '-';
 }
 
-    function carregarPedidos(){
+   function carregarPedidos(){
   const user = auth.currentUser;
   if(!user) return;
 
@@ -609,8 +673,6 @@ function adicionarProduto() {
         pendentesList.innerHTML = '<tr><td colspan="9">Nenhum pedido encontrado.</td></tr>';
         return;
       }
-const volumes = Number(document.getElementById('volumes').value);
-console.log("Volumes digitados:", volumes);
 
       snapshot.forEach(doc => {
         const p = doc.data();
@@ -620,37 +682,34 @@ console.log("Volumes digitados:", volumes);
           : `<span class="status-emdia">Em Dia</span>`;
 
         if (p.entregue) {
-    entreguesList.innerHTML += `
-    
-  <tr>
-    <td>${formatarProdutos(p.produtos)}</td>
-    <td>${p.vendas}</td>
-    <td>${p.cliente}</td>
-    <td>${p.dataEntrada}</td>
-    <td>${p.prazo}</td>
-    <td>${p.volumes}</td>
-    <td><span class="status-emdia">Entregue</span></td>
-  </tr>
-`;
-
-
-
+          entreguesList.innerHTML += `
+            <tr>
+              <td>${formatarProdutos(p.produtos)}</td>
+              <td>${p.vendas}</td>
+              <td>${p.cliente}</td>
+              <td>${p.dataEntrada}</td>
+              <td>${p.prazo}</td>
+              <td>${p.volumes}</td>
+              <td><span class="status-emdia">Entregue</span></td>
+            </tr>
+          `;
         } else {
           pendentesList.innerHTML += `
-  <tr>
-    <td>${formatarProdutos(p.produtos)}</td>
-    <td>${p.vendas}</td>
-    <td>${p.cliente}</td>
-    <td>${p.dataEntrada}</td>
-    <td>${p.prazo}</td>
-    <td>${atraso}</td>
-    <td>${p.volumes}</td>
-    <td>${status}</td>
-    <td><button onclick="marcarEntregue('${doc.id}')">Entregar</button></td>
-  </tr>
-`;
-
-
+            <tr>
+              <td>${formatarProdutos(p.produtos)}</td>
+              <td>${p.vendas}</td>
+              <td>${p.cliente}</td>
+              <td>${p.dataEntrada}</td>
+              <td>${p.prazo}</td>
+              <td>${atraso}</td>
+              <td>${p.volumes}</td>
+              <td>${status}</td>
+              <td>
+                <button onclick="marcarEntregue('${doc.id}')">Entregar</button>
+                <button onclick="editarPedido('${doc.id}')">Editar</button>
+              </td>
+            </tr>
+          `;
         }
       });
     })
@@ -709,26 +768,27 @@ console.log("Volumes digitados:", volumes);
         });
     }
     function imprimirTabela(tipo) {
-  let titulo = tipo === 'pendentes' ? 'Pedidos Pendentes' : 'Pedidos Entregues';
-  const tabela =
-    tipo === 'pendentes'
-      ? document.getElementById('pedidosPendentesList')
-      : document.getElementById('pedidosEntreguesList');
+  let titulo = '';
+  let rows = [];
+
+  const tabela = tipo === 'pendentes'
+    ? document.getElementById('pedidosPendentesList')
+    : document.getElementById('pedidosEntreguesList');
+
+  titulo = tipo === 'pendentes' ? 'Pedidos Pendentes' : 'Pedidos Entregues';
 
   const trs = tabela.querySelectorAll('tr');
 
-  let rows = [];
-
   trs.forEach(tr => {
     const tds = tr.querySelectorAll('td');
-    if (tds.length === 9 || tds.length === 7) { // pendentes ou entregues
+    if (tds.length >= 7) {
       const produtos = tds[0].innerHTML.replaceAll('<br>', '\n');
-      const vendas   = tds[1].innerText;
-      const cliente  = tds[2].innerText;
-      const entrada  = tds[3].innerText;
-      const prazo    = tds[4].innerText;
-      const volumes  = tipo === 'pendentes' ? tds[6].innerText : tds[5].innerText;
-      const status   = tipo === 'pendentes' ? tds[7].innerText : tds[6].innerText;
+      const vendas = tds[1].innerText;
+      const cliente = tds[2].innerText;
+      const entrada = tds[3].innerText;
+      const prazo = tds[4].innerText;
+      const volumes = tds[5].innerText;
+      const status = tipo === 'pendentes' ? tds[7]?.innerText : tds[6]?.innerText;
 
       rows.push({ produtos, vendas, cliente, entrada, prazo, volumes, status });
     }
@@ -739,8 +799,8 @@ console.log("Volumes digitados:", volumes);
       <td>${r.produtos.replaceAll('\n', '<br>')}</td>
       <td>${r.vendas}</td>
       <td>${r.cliente}</td>
-      <td>${r.entrada}</td>
-      <td>${r.prazo}</td>
+      <td class="nowrap">${r.entrada}</td>
+      <td class="nowrap">${r.prazo}</td>
       <td>${r.volumes}</td>
       <td>${r.status}</td>
     </tr>
@@ -754,8 +814,9 @@ console.log("Volumes digitados:", volumes);
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #000; padding: 6px; font-size: 13px; text-align: center; vertical-align: top; }
+          th, td { border: 1px solid #000; padding: 6px; font-size: 13px; text-align: center; vertical-align: middle; }
           th { background-color: #f0f0f0; }
+          td.nowrap { white-space: nowrap; }
           h2, h3 { text-align: center; margin-bottom: 10px; }
         </style>
       </head>
@@ -786,8 +847,9 @@ console.log("Volumes digitados:", volumes);
   janela.print();
   janela.close();
 }
+
+
   </script>
 
 </body>
 </html>
-
