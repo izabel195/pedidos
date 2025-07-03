@@ -767,7 +767,7 @@ function editarPedido(id) {
           alert('Erro ao carregar dados do gráfico.');
         });
     }
-    function imprimirTabela(tipo) {
+   function imprimirTabela(tipo) {
   let titulo = '';
   let rows = [];
 
@@ -781,16 +781,29 @@ function editarPedido(id) {
 
   trs.forEach(tr => {
     const tds = tr.querySelectorAll('td');
-    if (tds.length >= 7) {
+    if (tipo === 'pendentes' && tds.length >= 9) {
+      const produtos = tds[0].innerHTML.replaceAll('<br>', '\n');
+      const vendas = tds[1].innerText;
+      const cliente = tds[2].innerText;
+      const entrada = tds[3].innerText;
+      const prazo = tds[4].innerText;
+      const diasAtraso = tds[5].innerText;
+      const volumes = tds[6].innerText;
+      const status = tds[7].innerText;
+
+      rows.push({ produtos, vendas, cliente, entrada, prazo, diasAtraso, volumes, status });
+    }
+
+    if (tipo === 'entregues' && tds.length >= 7) {
       const produtos = tds[0].innerHTML.replaceAll('<br>', '\n');
       const vendas = tds[1].innerText;
       const cliente = tds[2].innerText;
       const entrada = tds[3].innerText;
       const prazo = tds[4].innerText;
       const volumes = tds[5].innerText;
-      const status = tipo === 'pendentes' ? tds[7]?.innerText : tds[6]?.innerText;
+      const status = tds[6].innerText;
 
-      rows.push({ produtos, vendas, cliente, entrada, prazo, volumes, status });
+      rows.push({ produtos, vendas, cliente, entrada, prazo, diasAtraso: '', volumes, status });
     }
   });
 
@@ -801,6 +814,7 @@ function editarPedido(id) {
       <td>${r.cliente}</td>
       <td class="nowrap">${r.entrada}</td>
       <td class="nowrap">${r.prazo}</td>
+      <td>${r.diasAtraso}</td>
       <td>${r.volumes}</td>
       <td>${r.status}</td>
     </tr>
@@ -831,6 +845,7 @@ function editarPedido(id) {
               <th>Cliente</th>
               <th>Entrada</th>
               <th>Prazo</th>
+              <th>Dias Atraso</th>
               <th>Volumes</th>
               <th>Status</th>
             </tr>
